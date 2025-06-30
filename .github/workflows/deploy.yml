@@ -32,6 +32,8 @@ jobs:
       - name: Build package
         run: |
           uv build
+        env:
+          DJANGO_SETTINGS_MODULE: anahit_backend.settings
 
       - name: Deploy to staging
         run: |

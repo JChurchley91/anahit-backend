@@ -1,0 +1,16 @@
+include README.md
+include manage.py
+include pyproject.toml
+recursive-include anahit_backend *.py
+recursive-include news_config *.py
+recursive-include news_config/migrations *.py
+recursive-exclude tests *
+exclude .env
+exclude .env.*
+exclude *.pyc
+exclude __pycache__
+recursive-exclude . __pycache__
+recursive-exclude . *.pyc
+exclude .coverage
+exclude coverage.xml
+exclude htmlcov
