@@ -2,14 +2,14 @@ name: Test Suite
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [master]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [master]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -24,79 +24,88 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     strategy:
       matrix:
         python-version: [3.13]
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-    
-    - name: Install dependencies
-      run: |
-        uv sync --dev
-    
-    - name: Set up environment variables
-      run: |
-        echo "DB_NAME=anahit-web" >> $GITHUB_ENV
-        echo "DB_USER=postgres" >> $GITHUB_ENV
-        echo "DB_PASSWORD=password" >> $GITHUB_ENV
-        echo "DB_HOST=localhost" >> $GITHUB_ENV
-        echo "DB_PORT=5432" >> $GITHUB_ENV
-        echo "SECRET_KEY=test-secret-key-for-github-actions" >> $GITHUB_ENV
-        echo "DEBUG=True" >> $GITHUB_ENV
-    
-    - name: Wait for PostgreSQL
-      run: |
-        until pg_isready -h localhost -p 5432 -U postgres; do
-          echo "Waiting for PostgreSQL..."
-          sleep 2
-        done
-    
-    - name: Run migrations
-      run: |
-        uv run python manage.py migrate
-    
-    - name: Run linting (if available)
-      run: |
-        # Add linting commands here when you add linters
-        # uv run ruff check .
-        # uv run black --check .
-        echo "Linting step placeholder"
-      continue-on-error: true
-    
-    - name: Run tests
-      run: |
-        uv run pytest --cov=news_config --cov-report=xml --cov-report=term-missing
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
-    
-    - name: Test Django admin
-      run: |
-        uv run python manage.py check
-        uv run python manage.py collectstatic --noinput --dry-run
-    
-    - name: Test API endpoints
-      run: |
-        uv run python manage.py runserver &
-        sleep 5
-        curl -f http://localhost:8000/api/configs || exit 1
-        curl -f http://localhost:8000/api/docs || exit 1
-        pkill -f runserver
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: |
+          uv sync --dev
+
+      - name: Set up environment variables
+        run: |
+          echo "DJANGO_SETTINGS_MODULE=anahit_backend.settings" >> $GITHUB_ENV
+          echo "DB_NAME=anahit-web" >> $GITHUB_ENV
+          echo "DB_USER=postgres" >> $GITHUB_ENV
+          echo "DB_PASSWORD=password" >> $GITHUB_ENV
+          echo "DB_HOST=localhost" >> $GITHUB_ENV
+          echo "DB_PORT=5432" >> $GITHUB_ENV
+          echo "SECRET_KEY=test-secret-key-for-github-actions" >> $GITHUB_ENV
+          echo "DEBUG=True" >> $GITHUB_ENV
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Run migrations
+        run: |
+          uv run python manage.py migrate
+        env:
+          DJANGO_SETTINGS_MODULE: anahit_backend.settings
+
+      - name: Run linting (if available)
+        run: |
+          # Add linting commands here when you add linters
+          # uv run ruff check .
+          # uv run black --check .
+          echo "Linting step placeholder"
+        continue-on-error: true
+
+      - name: Run tests
+        run: |
+          uv run pytest --cov=news_config --cov-report=xml --cov-report=term-missing
+        env:
+          DJANGO_SETTINGS_MODULE: anahit_backend.settings
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Test Django admin
+        run: |
+          uv run python manage.py check
+          uv run python manage.py collectstatic --noinput --dry-run
+        env:
+          DJANGO_SETTINGS_MODULE: anahit_backend.settings
+
+      - name: Test API endpoints
+        run: |
+          uv run python manage.py runserver &
+          sleep 5
+          curl -f http://localhost:8000/api/configs || exit 1
+          curl -f http://localhost:8000/api/docs || exit 1
+          pkill -f runserver
+        env:
+          DJANGO_SETTINGS_MODULE: anahit_backend.settings
