@@ -37,10 +37,47 @@ This is a Django backend application for managing news search configurations and
 - `uv build --wheel` - Build wheel package only
 - `uv build --sdist` - Build source distribution only
 
-### Database
+### Celery (Background Tasks)
+- `celery -A anahit_backend worker -l info` - Start Celery worker
+- `celery -A anahit_backend worker -l info -Q news_ingestion` - Start worker for specific queue
+- `celery -A anahit_backend beat -l info` - Start Celery beat (periodic tasks)
+- `celery -A anahit_backend worker -l info & celery -A anahit_backend beat -l info` - Start both worker and beat
+- `celery -A anahit_backend inspect active` - View active tasks
+- `celery -A anahit_backend inspect stats` - View worker statistics
+- `celery -A anahit_backend purge` - Clear all pending tasks
+
+### Docker Services
+- `docker-compose up -d redis` - Start Redis in background
+- `docker-compose up -d postgres` - Start PostgreSQL in background
+- `docker-compose up -d` - Start all services (Redis + PostgreSQL)
+- `docker-compose down` - Stop all services
+- `docker-compose logs redis` - View Redis logs
+
+### Database & Services
 - PostgreSQL database: `anahit-web` on localhost:5432
+- Redis: localhost:6379 (for Celery broker/result backend)
 - Environment variables configured in `.env` file
 - User: `postgres`, Password configured in `.env`
+
+## Celery Tasks
+
+### Available Tasks
+- `news_config.tasks.fetch_news_for_config` - Fetch news for a specific configuration
+- `news_config.tasks.fetch_news_for_all_active_configs` - Fetch news for all active configurations
+- `news_config.tasks.cleanup_old_articles` - Clean up old articles (keeps 30 days by default)
+
+### Periodic Tasks (Celery Beat)
+- News fetching runs every hour automatically
+- Article cleanup runs daily
+- Configure schedule in `CELERY_BEAT_SCHEDULE` setting
+
+### Environment Variables
+Add these to your `.env` file:
+```
+NEWS_API_KEY=your_newsapi_key_here
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+```
 
 ## API Endpoints
 
