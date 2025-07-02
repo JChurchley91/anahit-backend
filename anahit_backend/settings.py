@@ -131,3 +131,41 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Celery Configuration
+# https://docs.celeryproject.org/en/stable/userguide/configuration.html
+
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+
+# Celery task settings
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+
+# Celery beat schedule (for periodic tasks)
+CELERY_BEAT_SCHEDULE = {
+    "fetch-news-every-minute": {
+        "task": "news_config.tasks.fetch_news_for_all_active_configs",
+        "schedule": 60.0,  # Run every minute
+    },
+    "cleanup-old-articles-every-minute": {
+        "task": "news_config.tasks.cleanup_old_articles",
+        "schedule": 60.0,  # Run every minute
+        "kwargs": {"days_to_keep": 30},
+    },
+}
+
+# Task routing - direct tasks to specific queues
+CELERY_TASK_ROUTES = {
+    "news_config.tasks.*": {"queue": "news_ingestion"},
+}
+
+# Worker settings
+CELERY_WORKER_PREFETCH_MULTIPLIER = 4
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
+
+# NewsAPI Configuration
+NEWS_API_KEY = os.getenv("NEWS_API_KEY")
