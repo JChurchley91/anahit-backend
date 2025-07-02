@@ -146,13 +146,13 @@ CELERY_TIMEZONE = TIME_ZONE
 
 # Celery beat schedule (for periodic tasks)
 CELERY_BEAT_SCHEDULE = {
-    "fetch-news-hourly": {
+    "fetch-news-every-minute": {
         "task": "news_config.tasks.fetch_news_for_all_active_configs",
-        "schedule": 3600.0,  # Run every hour
+        "schedule": 60.0,  # Run every minute
     },
-    "cleanup-old-articles-daily": {
+    "cleanup-old-articles-every-minute": {
         "task": "news_config.tasks.cleanup_old_articles",
-        "schedule": 86400.0,  # Run daily (24 hours)
+        "schedule": 60.0,  # Run every minute
         "kwargs": {"days_to_keep": 30},
     },
 }
